@@ -1,4 +1,4 @@
-// Acquire sensor data from Particle Photon
+// Acquire and publish temperature and humidity from DHT22 sensor using Particle Photon
 //
 // To read variables from Particle Api use:
 // https://api.particle.io/v1/devices/YOUR_DEVICE_ID/humidity/?access_token=YOUR_ACCESS_TOKEN
