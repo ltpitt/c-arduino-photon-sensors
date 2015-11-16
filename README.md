@@ -8,14 +8,15 @@ This script allows to read data from a DHT22 (or other sensor) using Particle Ph
 
 ### How do I get set up? ###
 
-* Copy the code contained into dht22.ino into Particle Build
-* Add the required PietteTech_DHT library to your project using Particle Build
+* Copy the code contained into dht22.ino into Particle Build: https://build.particle.io/build/new
+* Add the required PietteTech_DHT library to your project searching it in "Libraries", in your Particle Build project
 * Flash it to your Particle Photon
 * Cackle into the darkness
 
 ### Possible problems ###
 
 If you get weird output from serial it is 99% of the cases bad connection or use of wrong resistor.
+
 I had success with 4.7k resistor but your mileage may vary.
 
 ### Retrieve published variables using Particle API ###
@@ -23,7 +24,7 @@ I had success with 4.7k resistor but your mileage may vary.
 * Temperature: https://api.particle.io/v1/devices/YOUR_DEVICE_ID/temperature/?access_token=YOUR_ACCESS_TOKEN
 * Humidity: https://api.particle.io/v1/devices/YOUR_DEVICE_ID/humidity/?access_token=YOUR_ACCESS_TOKEN
 
-Read Particle Documentation if you need further details
+Read Particle Documentation if you need further details: https://docs.particle.io/reference/api/
 
 ### Contribution guidelines ###
 
