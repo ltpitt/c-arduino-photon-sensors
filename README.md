@@ -4,7 +4,7 @@ Particle Photon DHT22
 
 ### What is this repository for? ###
 
-This script allows to read data from a DHT22 (or other sensor) using Particle Photon, publish it on the web and print it on serial
+This script allows to read data from a DHT22 (or other sensors supported by PietteTech_DHT library) using Particle Photon and publish retrieved data on the web and print it on serial
 
 ### How do I get set up? ###
 
@@ -15,7 +15,7 @@ This script allows to read data from a DHT22 (or other sensor) using Particle Ph
 
 ### Possible problems ###
 
-If you get weird output from serial it is 99% of the cases bad connection or use of wrong resistor.
+If you get weird output from serial, in 99% of the cases, it is because of a bad connection or the use of a wrong resistor.
 
 I had success with 4.7k resistor but your mileage may vary.
 
