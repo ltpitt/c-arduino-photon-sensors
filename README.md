@@ -1,6 +1,6 @@
 # README #
 
-Particle Photon DHT22
+Particle Photon Sensors - DHT22
 
 ### What is this repository for? ###
 
