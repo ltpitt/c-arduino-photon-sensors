@@ -11,7 +11,7 @@ This script allows to read data from a DHT22 (or other sensors supported by Piet
 * Copy the code contained into dht22.ino into Particle Build: https://build.particle.io/build/new
 * Add the required PietteTech_DHT library to your project searching it in "Libraries", in your Particle Build project
 * Flash it to your Particle Photon
-* Cackle into the darkness
+* Cackle into a dark cave
 
 ### Possible problems ###
 
