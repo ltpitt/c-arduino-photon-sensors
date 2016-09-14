@@ -1,11 +1,31 @@
-#include "HttpClient/HttpClient.h"
-#include "InternetButton/InternetButton.h"
+// Acquire sensor data from Particle Photon using DHT22 library
+//
+// This script will put Particle Photon in SLEEP_MODE_DEEP for the specified amount of time
+// for a very low energy use (if you need to work with batteries)
+//
+// OTA update is enabled using a simple http get of a variable on any specified Webserver path
+// When OTA mode is on the Particle Photon will not go to SLEEP_MODE_DEEP.
+// Also the onboard led will be on and a notification will be send (using external code).
+// Davide Nastri, 06/2016
 
-/**
-* Declaring the variables.
-*/
-unsigned int nextTime = 0;    // Next time to contact the server
+// Libraries includes
+#include "HttpClient/HttpClient.h" // HttpClient 
+#include "PietteTech_DHT/PietteTech_DHT.h" // DHT22 (Temperature and Humidity sensor)
+#include "math.h" // Math library for sensor values calculation
 
+// Defines
+#define DHTTYPE  DHT22 // Sensor type for DHT22 library (can be: DHT11/21/22/AM2301/AM2302)
+#define DHTPIN   D2 // Digital pin for communications           
+
+// Declaring the variables
+void dht_wrapper(); // Must be declared before the lib initialization
+unsigned int nextTime = 0; // Next time to contact the server
+int n;      // Sensor acquisition counter
+double temp;  // Temperature value
+double umid;  // Humidity value
+double t;   // Variable used in values rounding
+
+// HttpClient initialization
 HttpClient http;
 // Headers currently need to be set at init, useful for API keys etc.
 http_header_t headers[] = {
@@ -14,167 +34,151 @@ http_header_t headers[] = {
     { "Accept" , "*/*"},
     { NULL, NULL } // NOTE: Always terminate headers will NULL
 };
-
 http_request_t request;
 http_response_t response;
-InternetButton b = InternetButton();
-int i;
 
-void setup() {
+
+// DHT library initialization
+PietteTech_DHT DHT(DHTPIN, DHTTYPE, dht_wrapper);
+
+void dht_wrapper() {
+    DHT.isrCallback();
+}
+
+void setup()
+{
     Serial.begin(9600);
-    b.begin();
-    b.allLedsOff();
-    RGB.control(true); 
-    RGB.color(0, 0, 0);
-}
 
-void loop() {
+    Serial.println("Device starting...");
 
-    if(b.buttonOn(1)){
-        b.ledOn(1, 15, 0, 0);
-        b.ledOn(11, 15, 0, 0);
-        checkService(1);
-    }
-     
-    if(b.buttonOn(2)){
-        b.ledOn(3, 15, 0, 0);
-        checkService(2);
-    }
-
-    if(b.buttonOn(3)){
-        b.ledOn(6, 15, 0, 0);
-        checkService(3);
-    }
+    Serial.println("DHT Example program using DHT.acquireAndWait");
+    Serial.print("LIB version: ");
+    Serial.println(DHTLIB_VERSION);
+    Serial.println("---------------");
     
-    if(b.buttonOn(4)){
-        b.ledOn(9, 15, 0, 0);
-        checkService(4);
-    }
+    pinMode(D7, OUTPUT);
 
 }
 
-void okLed(int led){
+
+void loop()
+{
+    // Increase acquisition counter
+    n++;
     
-    if (led == 1) {
-            b.ledOn(1, 0, 15, 0);
-            b.ledOn(11, 0, 15, 0);
-            delay(1000);
-            b.ledOff(1);
-            b.ledOff(11);
-    }
-    else {
-        b.ledOn(led, 0, 15, 0);
-        delay(1000);
-        b.ledOff(led);
-    }
-}
+    // Check if OTA is enabled via http
+    // Request path and body can be set at runtime or at setup.
+    request.hostname = "192.168.178.25"; // Insert your Webserver IP
+    request.port = 8080; // Insert your Webserver PORT
+    request.path = "/ota"; // Insert the path where the string "on" or "off" can be retrieved
 
-void koLed(){
-    for (i = 0; i < 3; i++) {
-        b.allLedsOn(15, 0, 0);
-        delay(500);
-        b.allLedsOff();
-        delay(500);
-    }
-    
-}
+    // The library also supports sending a body with your request:
+    //request.body = "{\"key\":\"value\"}";
 
-String restCall(int button){
-    
-    static const uint16_t TIMEOUT = 95000; // Allow maximum 95s between data packets.
-
-    request.hostname = "YOURSERVERIP";
-    request.port = YOURSERVERPORT;
-
-    // Check if user already requested the restCall less than 2 seconds ago
-    if (nextTime > millis()) {
-        koLed();
-        return "Nothing done: button pressed too soon after the previous request";
-    }
-
-    // Specified paths are just customizable examples
-    if (button == 1){
-        request.path = "/internet_button_1/1/unreal";
-    }
-    if (button == 2){
-        request.path = "/internet_button_1/2/unreal";
-    }
-    if (button == 3){
-        request.path = "/internet_button_1/3/unreal";
-    }
-    if (button == 4){
-        request.path = "/internet_button_1/4/unreal";
-    }
-    
     // Get request
     http.get(request, response, headers);
-
-    // Print response.status and response.body to serial
+    Serial.print("Application>\tResponse status: ");
     Serial.println(response.status);
+    Serial.print("Application>\tHTTP Response Body: ");
     Serial.println(response.body);
+    
+    // Temperature and Humidity 
+    Serial.print("\n");
+    Serial.print(n);
+    Serial.print(": Retrieving information from sensor: ");
+    Serial.print("Read sensor: ");
+    delay(100);
 
-    // Update nextTime execution
-    nextTime = millis() + 500;
+    // Acquire data from sensor
+    int result = DHT.acquireAndWait();
 
-    // If request went well blink led to inform user
-    // Response status and body can be customized to match
-    // The ones given by your REST API
-    if (response.status==200 and response.body=="done") {
-        
-        if (button==1){
-            okLed(1);
-        }
-        
-        if (button==2){
-            okLed(3);
-        }
-
-        
-        if (button==3){
-            okLed(6);
-        }
-        
-        if (button==4){
-            okLed(9);
-        }
-        
-    }
-    
-    if (response.status=-1 and button==1){
- 
-        okLed(1);
-        
-    }
-    
-    if (response.status=-1 and button==2){
-        
-        okLed(3);
-    
-    }
-    
-    if (response.status=-1 and button==4){
-        
-        okLed(9);
-           
+    // Error handling
+    switch (result) {
+        case DHTLIB_OK:
+            Serial.println("OK");
+            break;
+        case DHTLIB_ERROR_CHECKSUM:
+            Serial.println("Error\n\r\tChecksum error");
+            break;
+        case DHTLIB_ERROR_ISR_TIMEOUT:
+            Serial.println("Error\n\r\tISR time out error");
+            break;
+        case DHTLIB_ERROR_RESPONSE_TIMEOUT:
+            Serial.println("Error\n\r\tResponse time out error");
+            break;
+        case DHTLIB_ERROR_DATA_TIMEOUT:
+            Serial.println("Error\n\r\tData time out error");
+            break;
+        case DHTLIB_ERROR_ACQUIRING:
+            Serial.println("Error\n\r\tAcquiring");
+            break;
+        case DHTLIB_ERROR_DELTA:
+            Serial.println("Error\n\r\tDelta time to small");
+            break;
+        case DHTLIB_ERROR_NOTSTARTED:
+            Serial.println("Error\n\r\tNot started");
+            break;
+        default:
+            Serial.println("Unknown error");
+            break;
     }
 
-    return response.body;
-    
-}
+    // Humidity value retrieval and rounding
+    umid=DHT.getHumidity();
+    t=umid-floor(umid);  // Get only decimal part
+    t=t*100; // Multiply by 100 decimal part, get xx.xxxxxxxxx
+    t=floor(t); // Get only last two characters of decimal part, get yy
+    umid=floor(umid)+(t/100);
 
-String checkService(int button) {
+    // Temperature value retrieval and rounding
+    temp=DHT.getCelsius();
+    t=temp-floor(temp); // Get only decimal part
+    t=t*100; // Multiply by 100 decimal part, get xx.xxxxxxxxx
+    t=floor(t); // Get only last two characters of decimal part, get yy
+    temp=floor(temp)+(t/100);
 
-    request.hostname = "YOURSERVERIP";
-    request.port = YOURPORT;
-    request.path = "/ota";
-    // Get request
-    http.get(request, response, headers);
+    // Print sensor data to serial
+    Serial.print("Humidity (%): ");
+    Serial.println(DHT.getHumidity(), 2);
+    Serial.print("Temperature (oC): ");
+    Serial.println(DHT.getCelsius(), 2);
+    Serial.print("Temperature (oF): ");
+    Serial.println(DHT.getFahrenheit(), 2);
+    Serial.print("Temperature (K): ");
+    Serial.println(DHT.getKelvin(), 2);
+    Serial.print("Dew Point (oC): ");
+    Serial.println(DHT.getDewPoint());
+    Serial.print("Dew Point Slow (oC): ");
+    Serial.println(DHT.getDewPointSlow());
 
-    if (response.status==200) {
-        b.playSong("C1,4,C1,4,C1,4");
-        restCall(button);
+    // Uncomment or comment below rows accoring to the sensor you are going to flash
+    //Particle.publish("1_floor_temp", String(temp,1), PRIVATE);
+    //Particle.publish("1_floor_hum", String(umid, 1), PRIVATE);
+    Particle.publish("2_floor_temp", String(temp,1), PRIVATE);
+    Particle.publish("2_floor_hum", String(umid,1), PRIVATE);
+
+    // Check if OTA update is enabled
+    if (response.body=="off") {
+        // Turn off onboard led
+        digitalWrite(D7, LOW);
+        // Put Particle Photon in deep sleep for 900 seconds (15 minutes)
+        System.sleep(SLEEP_MODE_DEEP,900);
     } else {
-        koLed();
+        // Turn on onboard led
+        digitalWrite(D7, HIGH);
+        // Send notification
+        request.hostname = "192.168.178.25"; // Insert your Webserver IP
+        request.port = 8080; // Insert your Webserver PORT
+        request.path = "/notification/ota"; // Webserver url that sends ota notification to user
+        // Get request
+        Serial.print("Application>\tSending OTA on notification to user");
+        http.get(request, response, headers);
+        Serial.print("Application>\tResponse status: ");
+        Serial.println(response.status);
+        Serial.print("Application>\tHTTP Response Body: ");
+        Serial.println(response.body);
+        // Delay 900000 milliseconds (15 minutes)
+        delay(900000);
     }
-
+    
 }
