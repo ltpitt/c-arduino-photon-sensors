@@ -9,13 +9,13 @@
 // Davide Nastri, 06/2016
 
 // Libraries includes
-#include "HttpClient/HttpClient.h" // HttpClient 
-#include "PietteTech_DHT/PietteTech_DHT.h" // DHT22 (Temperature and Humidity sensor)
+#include <HttpClient.h> // HttpClient 
+#include <PietteTech_DHT.h> // DHT22 (Temperature and Humidity sensor)
 #include "math.h" // Math library for sensor values calculation
 
 // Defines
 #define DHTTYPE  DHT22 // Sensor type for DHT22 library (can be: DHT11/21/22/AM2301/AM2302)
-#define DHTPIN   D2 // Digital pin for communications           
+#define DHTPIN   D6 // Digital pin for communications           
 
 // Declaring the variables
 void dht_wrapper(); // Must be declared before the lib initialization
@@ -57,7 +57,13 @@ void setup()
     Serial.println("---------------");
     
     pinMode(D7, OUTPUT);
-
+    
+    Particle.variable("2_floor_temp", &temp, DOUBLE);
+    Particle.variable("2_floor_hum", &umid, DOUBLE);
+    
+    // Turn off Particle onboard LED
+    RGB.control(true); 
+    RGB.color(0, 0, 0);
 }
 
 
@@ -156,13 +162,12 @@ void loop()
     //Particle.publish("1_floor_hum", String(umid, 1), PRIVATE);
     Particle.publish("2_floor_temp", String(temp,1), PRIVATE);
     Particle.publish("2_floor_hum", String(umid,1), PRIVATE);
-
     // Check if OTA update is enabled
     if (response.body=="off") {
         // Turn off onboard led
         digitalWrite(D7, LOW);
-        // Put Particle Photon in deep sleep for 900 seconds (15 minutes)
-        System.sleep(SLEEP_MODE_DEEP,900);
+        // Put Particle Photon in deep sleep for 300 seconds (5 minutes)
+        System.sleep(SLEEP_MODE_DEEP,60);
     } else {
         // Turn on onboard led
         digitalWrite(D7, HIGH);
@@ -177,8 +182,8 @@ void loop()
         Serial.println(response.status);
         Serial.print("Application>\tHTTP Response Body: ");
         Serial.println(response.body);
-        // Delay 900000 milliseconds (15 minutes)
-        delay(900000);
+        // Delay 300000 milliseconds (5 minutes)
+        delay(60000);
     }
     
 }
